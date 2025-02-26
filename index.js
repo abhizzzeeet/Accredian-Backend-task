@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const nodemailer = require("nodemailer");
 const { PrismaClient } = require("@prisma/client");
 require("dotenv").config();
 
@@ -9,8 +10,18 @@ app.use(cors());
 
 const prisma = new PrismaClient();
 
-// 📝 API to Submit Referral
+// Email Configuration using Nodemailer
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER, // Your Gmail
+        pass: process.env.EMAIL_PASS, // Your App Password
+    },
+});
+
+// API to Submit Referral
 app.post("/api/referrals", async (req, res) => {
+    console.log("Received Request Body:", req.body); 
     const { referrerName, referrerEmail, refereeName, refereeEmail, courseName } = req.body;
 
     if (!referrerName || !referrerEmail || !refereeName || !refereeEmail || !courseName) {
@@ -21,15 +32,26 @@ app.post("/api/referrals", async (req, res) => {
         const newReferral = await prisma.referral.create({
             data: { referrerName, referrerEmail, refereeName, refereeEmail, courseName },
         });
+        // 🔹 Email Content
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: refereeEmail, // Sending to the referred person
+            subject: "You've Been Referred for a Course!",
+            text: `Hello ${refereeName},\n\n${referrerName} has referred you for the "${courseName},\n\n his/her email: ${referrerEmail} " course.\nCheck it out and enroll soon!\n\nBest Regards,\nYour Team`,
+        };
 
-        res.status(201).json({ message: "Referral saved!", referral: newReferral });
+        // 🔹 Send Email
+        await transporter.sendMail(mailOptions);
+
+        res.status(201).json({ message: "Referral saved & email sent!", referral: newReferral });
     } catch (error) {
-        console.error("Error saving referral:", error);
-        res.status(500).json({ error: "Failed to save referral." });
+        console.error("Error:", error);
+        res.status(500).json({ error: "Failed to save referral or send email." });
     }
+
 });
 
-// 📝 API to Get All Referrals
+// API to Get All Referrals
 app.get("/api/referrals", async (req, res) => {
     try {
         const referrals = await prisma.referral.findMany();
