@@ -7,7 +7,9 @@
 Step 1 : Provide the following environment variable keys with you own values , i have not git ignored the .env file
 
 DATABASE_URL="mysql://root:abhijeet@123@localhost:3306/accredian_db" 
+
 EMAIL_USER="abhijeetbasfore@gmail.com"
+
 EMAIL_PASS = "tvyh axku jxyl uvwx"
 
 Step2 : Run commands in order
